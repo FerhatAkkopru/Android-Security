@@ -61,11 +61,16 @@ Kullanıcının telefonunun fiziksel olarak çalınması veya kaybolmasdır. Sal
 
 Cihazın sahibinin (veya saldırganın) Android'in üretici kısıtlamalarını kaldırarak Linux root yetkisini elde etmesidir. Root yetkisi sandbox kurallarını yıkar,Ayrıca rootlu cihazda Frida gibi araçlar çalıştırılarak uygulamanın çalışma anında bellekteki fonksiyonlar manipüle edilebilir — mesela SSL pinning kontrolünü "her zaman başarılı" döndürecek şekilde değiştirmek gibi.Korunma: Root detection (root tespiti) + verileri Keystore ile şifreleme + Play Integrity API ile sunucu tarafında doğrulama. Ama bunlar geçici önlemlerdir tam kontrol saldırganda root olduğu için
 
+link:https://developer.android.com/privacy-and-security/security-tips
+
 ## Repackaged APK (Yeniden Paketlenmiş APK)
 
 Saldırgan uygulamayı Play Store'dan veya internetten indirir, apktool gibi bir araçla APK'yı parçalarına ayırır (decompile eder). İçindeki kodu okur, istediği değişikliği yapar — mesela login ekranına kullanıcının girdiği şifreyi kendi sunucusuna gönderen birkaç satır kod ekler.
 
 Uygulamanı imzalayan Keystore'un parmak izini (signature hash) uygulama her açıldığında kontrol ettirmek bu problemi önleyebilir. Saldırgan kodu değiştirip kendi Keystore'u ile yeniden imzaladıysa parmak izi farklı olacak uygulama da kendini kapatır veya sunucuya "ben sahte bir kopyayım" sinyali gönderir. Ek olarak Google'ın Play Integrity API'si sunucu tarafında uygulamanın orijinalliğini doğrular. Ayrıca R8/ProGuard ile kodunu obfuscate etmek (karıştırmak) repackaging'i engellemez ama saldırganın kodunu okumasını ve değiştirmesini çok daha zor hale getirir.
+
+link1:https://developer.android.com/google/play/integrity/overview
+link2:https://developer.android.com/build/shrink-code
 
 ## Malicious App on Same Device (Aynı Cihazdaki Zararlı Uygulama)
 
@@ -89,7 +94,17 @@ MASVS kuralları şu ana kategorilere ayrılır:
 - MASVS-CODE: Kod kalitesi ve sertleştirme yeterli mi? (Obfuscation, tamper detection, debug kontrolleri)
 - MASVS-RESILIENCE: Tersine mühendisliğe karşı dayanıklılık var mı? (Root detection, anti-Frida, integrity check)
 
+link:https://mas.owasp.org/MASVS/
+
 ## OWASP MASTG (Mobile Application Security Testing Guide)
 
 MASVS'ın pratik karşılığı. "Nasıl test edilir?" sorusuna cevap verir. Her MASVS kuralı için somut test adımları içerir: hangi aracı kullan, neyi kontrol et, ne bulduysan ne anlama gelir.
 Örnek akış: MASVS-STORAGE diyor ki "Hassas veri şifreli saklanmalı." MASTG ise diyor ki "Rootlu cihazda adb shell ile /data/data/com.paket.adi/shared_prefs/ klasörüne git, XML dosyalarını aç, plaintext token var mı bak. Varsa bu kural ihlal edilmiş demektir."
+
+link:https://mas.owasp.org/MASTG/
+
+## Some Keywords
+- **Intent**: Android'de uygulamalar arası veya uygulama içi iletişim mesajı. "Şu Activity'yi aç", "Şu Service'i başlat", "Kamerayı tetikle" gibi komutlar Intent ile gönderilir.
+- **FLAG_SECURE**: Bir Activity'ye eklenen bayrak. Ekran görüntüsü alınmasını ve son uygulamalar (recents) önizlemesinde içeriğin görünmesini engeller.
+- **Content Provider**: Uygulamanın verilerini yapılandırılmış bir şekilde (SQL benzeri sorguyla) diğer uygulamalarla paylaşmasını sağlayan Android bileşeni. Rehber uygulaması buna iyi bir örnek — diğer uygulamalar Content Provider üzerinden kişileri okur.
+- **Obfuscation**: Kodun çalışmasını değiştirmeden sınıf, metod ve değişken isimlerini anlamsız harflere (a.b.c) çevirmek. Decompile eden saldırganın kodu anlamasını zorlaştırır.

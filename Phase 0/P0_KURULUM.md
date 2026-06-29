@@ -193,17 +193,13 @@ docker pull opensecurity/mobile-security-framework-mobsf
 
 ---
 
-## 7. Magisk
+## 7. Rootlu Emülatör (AVD + Magisk)
 
-Magisk: Root yetkisini yöneten araç. Hangi uygulamanın root erişimi istediğini kontrol eder (Superuser Request pop-up'ı Magisk'ten geliyor). Ayrıca root'u gizleme (MagiskHide/DenyList) özelliği var — uygulamaların root tespitini test etmek için kullanacaksın.
-
----
-
-## 8. Rootlu Emülatör (AVD + Magisk)
+Magisk: Root yetkisini yöneten araç. Hangi uygulamanın root erişimi istediğini kontrol eder (Superuser Request pop-up'ı Magisk'ten geliyor). Ayrıca root'u gizleme (MagiskHide/DenyList) özelliği var.
 
 Güvenlik testlerinde tam yetki elde etmek için root yetkisine sahip bir Android emülatörü gerekir.
 
-### Adım 8.1 — Emülatör Oluşturma
+### Adım 7.1 — Emülatör Oluşturma
 
 1. Android Studio'yu aç → **Device Manager** → **Create Virtual Device**
 2. Cihaz profili olarak **Pixel 9 Pro** veya benzeri bir şey seç (fark etmez)
@@ -223,7 +219,7 @@ adb devices
 # emulator-5554   device
 ```
 
-### Adım 8.2 — rootAVD ile Magisk Kurulumu
+### Adım 7.2 — rootAVD ile Magisk Kurulumu
 
 **rootAVD scriptini indir:**
 ```bash
@@ -247,7 +243,7 @@ cd rootAVD
 - Terminalde Magisk versiyon seçim menüsü çıkacak → numara yazarak **Stable** versiyonu seç
 - Script tamamlandığında emülatör kapanacak, bu normal
 
-### Adım 8.3 — Root Doğrulama
+### Adım 7.3 — Root Doğrulama
 
 1. Android Studio → **Device Manager** → emülatörün yanındaki **üç nokta (⋮)** → **Cold Boot Now**
 2. Emülatör açıldıktan sonra terminalde:

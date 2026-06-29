@@ -16,7 +16,16 @@
 
 ## 1. ADB (Android Debug Bridge)
 
-ADB, Android Studio ile birlikte gelir. Ancak terminal onu doğrudan bulamayabilir. PATH'e eklenmesi gerekir.
+Android cihaz/emülatör ile bilgisayarın arasındaki köprü. Terminalden cihaza bağlanıp dosya çekme/gönderme, uygulama yükleme, log okuma, shell açma gibi her şey yapılabilir.
+
+**Temel komutlar:**
+
+- adb devices — bağlı cihazları listeleme
+- adb install app.apk — APK yükleme
+- adb shell — cihazda terminal açma
+- adb pull /data/data/com.paket/shared_prefs/token.xml ./ — cihazdan dosya çekme
+- adb logcat — canlı log akışını izleme (hassas veri loglanıyor mu diye kontrol)
+- adb backup -f backup.ab com.paket — uygulama yedeği alma
 
 **Kontrol:**
 ```bash
@@ -40,7 +49,14 @@ adb version
 
 ## 2. Burp Suite Community Edition
 
-Ağ trafiğini araya girip (intercept) dinlemek ve değiştirmek için kullanılan proxy aracı.
+Bilgisayarında çalışan bir MITM proxy. Emülatörün internet trafiğini Burp üzerinden geçer, giden/gelen her HTTP/HTTPS isteği görünür, durdurur, değiştirir ve öyle yollarsın.
+
+**Temel kullanım akışı:**
+
+- Burp'te Proxy → Intercept sekmesini aç
+- Emülatörün Wi-Fi ayarlarında proxy olarak bilgisayarının IP'sini ve Burp'ün portunu (varsayılan 8080) gir
+- Uygulamadan istek atma → istek Burp'e düşer → okursun/değiştirirsin → Forward ile sunucuya yollarsın
+- HTTP History sekmesinde geçmiş tüm istekleri inceleyebili
 
 **Kurulum:**
 
@@ -60,7 +76,13 @@ Ağ trafiğini araya girip (intercept) dinlemek ve değiştirmek için kullanıl
 
 ## 3. jadx-gui
 
-APK dosyalarını decompile edip okunabilir Java/Kotlin koduna çeviren araç. Hardcoded secret avlamak için kullanılır.
+APK dosyasını alıp içindeki Dalvik bytecode'u okunabilir Java/Kotlin koduna çevirir. Grafiksel arayüzü var, kod içinde arama yapabilirsin. Amacı: uygulamanın kaynak kodunu okumak, hardcoded API key/şifre/token avlamak, uygulama mantığını anlamak.
+
+**Temel kullanım:**
+
+- jadx-gui app.apk — APK'yı arayüzde aç
+- Sol panelde paket yapısını gezebilirsin
+- Cmd+F ile tüm kodda arama yap (örn: "password", "api_key", "secret", "token")
 
 **Ön koşul:** Homebrew kurulu olmalı.
 
@@ -87,7 +109,14 @@ jadx --version
 
 ## 4. apktool
 
-APK'yı Smali koduna ve kaynak dosyalarına ayırıp yeniden paketlemeye yarayan araç.
+jadx'ten farklı olarak APK'yı Smali koduna (Android assembly) ve ham kaynak dosyalarına (AndroidManifest.xml, res/ klasörü) ayırır. Kritik fark: apktool ile kodu değiştirip APK'yı yeniden paketleyebilirsin (rebuild). jadx sadece okumak içindir, apktool okuma + yazma + yeniden paketleme içindir.
+
+**Temel komutlar:**
+
+- apktool d app.apk -o output_folder — APK'yı parçala (decode)
+- Çıkan klasördeki smali kodunu veya AndroidManifest.xml'i değiştir
+- apktool b output_folder -o modified.apk — değiştirilmiş kodu yeniden APK yap (build)
+- Sonra yeni bir Keystore ile imzala: apksigner sign --ks my.keystore modified.apk
 
 **Kurulum:**
 ```bash
@@ -104,7 +133,15 @@ apktool --version
 
 ## 5. Frida + objection
 
-Çalışan bir uygulamanın belleğine sızıp runtime'da fonksiyonları manipüle eden araç seti. SSL pinning bypass, root detection bypass gibi işlemler için kullanılır.
+Frida: Çalışan bir uygulamanın belleğine (RAM) runtime'da sızıp fonksiyonları hook'layan (yakalayan) araç. JavaScript ile script yazarsın, Frida o scripti çalışan uygulamaya enjekte eder. Örneğin SSL pinning kontrolü yapan fonksiyonu bulup "her zaman true dön" diye değiştirirsin.
+objection: Frida'nın üzerine kurulu, hazır komutlarla gelen üst seviye bir araç. Frida script yazmadan tek satır komutla SSL pinning bypass, root detection bypass gibi işlemleri yapabilirsin.
+
+**Temel komutlar:**
+
+- objection -g com.paket.adi explore — uygulamaya bağlan
+- android sslpinning disable — SSL pinning'i bypass et 
+- android root disable — root detection'ı bypass et 
+- android hooking list classes — uygulamadaki tüm sınıfları listele
 
 **Ön koşul:** Python 3 ve pip3 kurulu olmalı.
 
@@ -132,30 +169,20 @@ objection version
 
 ## 6. MobSF (Mobile Security Framework)
 
-APK'yı otomatik tarayıp güvenlik raporu çıkaran statik ve dinamik analiz aracı. Docker üzerinden çalıştırılır.
-
-**Ön koşul:** Docker Desktop kurulu ve çalışır durumda olmalı.
-
-```bash
-# Docker kontrolü
-docker --version
-
-# Docker Desktop çalışıyor mu?
-docker info
-# Eğer "Cannot connect to the Docker daemon" hatası alırsan:
-# Spotlight (Cmd + Space) → "Docker" yaz → Docker Desktop'ı aç
-# Sol altta yeşil "Running" yazana kadar bekle (30-60 saniye)
-```
+APK'yı sürükle-bırak ile yükle, otomatik olarak statik analiz yapıp sana bir güvenlik raporu çıkarsın. Hardcoded secret'lar, güvensiz permission'lar, allowBackup durumu, cleartext izni, zayıf crypto kullanımı gibi şeyleri otomatik tarar ve puanlar.
 
 **Kurulum:**
 ```bash
 docker pull opensecurity/mobile-security-framework-mobsf
 ```
 
-**Çalıştırma (test):**
-```bash
-docker run -it --rm -p 8000:8000 opensecurity/mobile-security-framework-mobsf
-```
+**Temel kullanım:**
+
+- docker run -it --rm -p 8000:8000 opensecurity/mobile-security-framework-mobsf ile başlat
+- Tarayıcıda http://localhost:8000 aç
+- APK dosyasını sürükle bırak → analiz başlar
+- Raporda her bulguyu severity'ye göre (High/Medium/Low) sıralar
+
 
 **Doğrulama:**
 
@@ -166,11 +193,17 @@ docker run -it --rm -p 8000:8000 opensecurity/mobile-security-framework-mobsf
 
 ---
 
-## 7. Rootlu Emülatör (AVD + Magisk)
+## 7. Magisk
+
+Magisk: Root yetkisini yöneten araç. Hangi uygulamanın root erişimi istediğini kontrol eder (Superuser Request pop-up'ı Magisk'ten geliyor). Ayrıca root'u gizleme (MagiskHide/DenyList) özelliği var — uygulamaların root tespitini test etmek için kullanacaksın.
+
+---
+
+## 8. Rootlu Emülatör (AVD + Magisk)
 
 Güvenlik testlerinde tam yetki elde etmek için root yetkisine sahip bir Android emülatörü gerekir.
 
-### Adım 7.1 — Emülatör Oluşturma
+### Adım 8.1 — Emülatör Oluşturma
 
 1. Android Studio'yu aç → **Device Manager** → **Create Virtual Device**
 2. Cihaz profili olarak **Pixel 9 Pro** veya benzeri bir şey seç (fark etmez)
@@ -190,7 +223,7 @@ adb devices
 # emulator-5554   device
 ```
 
-### Adım 7.2 — rootAVD ile Magisk Kurulumu
+### Adım 8.2 — rootAVD ile Magisk Kurulumu
 
 **rootAVD scriptini indir:**
 ```bash
@@ -214,7 +247,7 @@ cd rootAVD
 - Terminalde Magisk versiyon seçim menüsü çıkacak → numara yazarak **Stable** versiyonu seç
 - Script tamamlandığında emülatör kapanacak, bu normal
 
-### Adım 7.3 — Root Doğrulama
+### Adım 8.3 — Root Doğrulama
 
 1. Android Studio → **Device Manager** → emülatörün yanındaki **üç nokta (⋮)** → **Cold Boot Now**
 2. Emülatör açıldıktan sonra terminalde:

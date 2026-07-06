@@ -102,6 +102,7 @@ Bu IP adresi emülatörün trafiği göndereceği hedef — yani Burp'ün çalı
 - Emülatörde sayfaları normal gezebilirsin
 - Burp'te **HTTP History** sekmesine geç — tüm istekler ve cevaplar sessizce kaydedilmiş olarak listelenir
 - Saldırgan genelde bu modu kullanır: kullanıcı hiçbir şey fark etmez, saldırgan arka planda tüm trafiği okur
+
 ### Gerçek Hayatta Bu Nasıl Olur?
  
 Gerçek bir saldırıda kullanıcı hiçbir proxy ayarı yapmaz. Saldırgan Wi-Fi ağının kendisini kontrol eder — kafedeki router'ı hackler veya "Free_Cafe_WiFi" gibi sahte bir ağ açar. Kullanıcılar bu ağa bağlandığında tüm trafik saldırganın bilgisayarından geçer. Kullanıcının haberi olmaz.

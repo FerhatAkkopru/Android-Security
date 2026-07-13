@@ -1,0 +1,17 @@
+
+# .NET build outputs
+bin/
+obj/
+
+# Android / Gradle build outputs
+.gradle/
+build/
+**/build/
+
+# Android Studio
+.idea/
+*.iml
+local.properties
+
+# macOS
+.DS_Store

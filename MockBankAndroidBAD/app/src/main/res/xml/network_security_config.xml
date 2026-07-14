@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- ZAFİYET 1: HTTP (Cleartext) trafiğe her koşulda izin ver -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <!-- Sistemin kendi güvendiği sertifikalar -->
+            <certificates src="system" />
+            <!-- ZAFİYET 2: Kullanıcının cihaza manuel yüklediği (Burp) sertifikalara güven -->
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

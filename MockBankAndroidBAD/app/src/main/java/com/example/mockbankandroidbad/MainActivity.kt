@@ -4,25 +4,9 @@ import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -31,10 +15,22 @@ import com.example.mockbankandroidbad.ui.theme.MockBankAndroidBADTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
-import java.io.OutputStreamWriter
-import java.net.HttpURLConnection
-import java.net.URL
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Body
+import retrofit2.http.POST
+
+// --- Veri Modelleri ---
+data class LoginRequest(val username: String, val password: String)
+data class LoginResponse(val accessToken: String, val refreshToken: String, val expiresIn: Int)
+
+// --- API Arayüzü ---
+interface MockBankApiService {
+    @POST("/login")
+    suspend fun login(@Body request: LoginRequest): LoginResponse
+}
 
 class MainActivity : ComponentActivity() {
 
@@ -43,14 +39,32 @@ class MainActivity : ComponentActivity() {
         private const val PREFS_NAME = "auth_prefs"
     }
 
+    // --- Zafiyetli Ağ İstemcisi Kurulumu ---
+    private val apiService: MockBankApiService by lazy {
+        // ZAFİYET: Log seviyesi BODY. Tüm request ve response'lar Logcat'e sızar.
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+
+        val client = OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .build()
+
+        // ZAFİYET: HTTP üzerinden cleartext haberleşme.
+        val retrofit = Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        retrofit.create(MockBankApiService::class.java)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
             MockBankAndroidBADTheme {
-                LoginScreen(
-                    context = this
-                )
+                LoginScreen(context = this)
             }
         }
     }
@@ -96,14 +110,11 @@ class MainActivity : ComponentActivity() {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = rememberMe,
                     onCheckedChange = { rememberMe = it }
                 )
-
                 Text(text = "Remember me - insecure in v1")
             }
 
@@ -114,15 +125,12 @@ class MainActivity : ComponentActivity() {
                 onClick = {
                     scope.launch {
                         resultText = "Logging in..."
-
-                        val result = loginAndStoreTokens(
+                        resultText = loginAndStoreTokens(
                             context = context,
                             username = username,
                             password = password,
                             rememberMe = rememberMe
                         )
-
-                        resultText = result
                     }
                 }
             ) {
@@ -143,49 +151,21 @@ class MainActivity : ComponentActivity() {
     ): String {
         return withContext(Dispatchers.IO) {
             try {
-                val url = URL("$BASE_URL/login")
-                val connection = url.openConnection() as HttpURLConnection
+                // Retrofit üzerinden istek atılır
+                val request = LoginRequest(username, password)
+                val response = apiService.login(request)
 
-                connection.requestMethod = "POST"
-                connection.setRequestProperty("Content-Type", "application/json")
-                connection.doOutput = true
-
-                val requestJson = JSONObject()
-                requestJson.put("username", username)
-                requestJson.put("password", password)
-
-                OutputStreamWriter(connection.outputStream).use { writer ->
-                    writer.write(requestJson.toString())
-                    writer.flush()
-                }
-
-                val statusCode = connection.responseCode
-
-                if (statusCode != 200) {
-                    return@withContext "Login failed. HTTP $statusCode"
-                }
-
-                val responseBody = connection.inputStream.bufferedReader().use { it.readText() }
-
-                val responseJson = JSONObject(responseBody)
-
-                val accessToken = responseJson.getString("accessToken")
-                val refreshToken = responseJson.getString("refreshToken")
-                val expiresIn = responseJson.getInt("expiresIn")
-
-                // v1-vulnerable:
-                // Token'lar düz SharedPreferences içine plaintext yazılıyor.
+                // v1-vulnerable: Token'lar düz SharedPreferences içine plaintext yazılıyor.
                 val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
                 prefs.edit()
-                    .putString("access_token", accessToken)
-                    .putString("refresh_token", refreshToken)
-                    .putInt("expires_in", expiresIn)
+                    .putString("access_token", response.accessToken)
+                    .putString("refresh_token", response.refreshToken)
+                    .putInt("expires_in", response.expiresIn)
                     .putString("username", username)
                     .apply()
 
-                // v1-vulnerable:
-                // Remember me açıksa password bile plaintext saklanıyor.
+                // v1-vulnerable: Remember me açıksa password bile plaintext saklanıyor.
                 if (rememberMe) {
                     prefs.edit()
                         .putString("remembered_password", password)

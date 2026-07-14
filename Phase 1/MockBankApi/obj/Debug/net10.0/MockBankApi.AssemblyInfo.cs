@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MockBankApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b32ab097c14040b10adceee505fdacf2a102752f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a978ed0d61beb16b5db1be3d127dc73a1206018c")]
 [assembly: System.Reflection.AssemblyProductAttribute("MockBankApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MockBankApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
